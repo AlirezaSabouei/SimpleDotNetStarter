@@ -1,19 +1,15 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Project.MVC.Models;
+using Project.Business.Services.{{EntityPluralName}};
 
 namespace Project.MVC.Controllers;
 
-public class HomeController(ILogger<HomeController> logger) : Controller
+public class {{EntityName}}Controller(
+    {{EntityName}}Services service,
+    ILogger<{{EntityName}}Controller> logger) : Controller
 {
-    private readonly ILogger<HomeController> _logger = logger;
-
     public IActionResult Index()
-    {
-        return View();
-    }
-
-    public IActionResult Privacy()
     {
         return View();
     }

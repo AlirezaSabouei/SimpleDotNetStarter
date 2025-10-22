@@ -28,7 +28,7 @@ namespace Project.RazorPages
             builder.Services.AddSwaggerGen();
 
             //DI
-            builder.Services.AddScoped<Business.Services.StudentServices>();
+            //builder.Services.AddScoped<Business.Services.StudentServices>();
             builder.Services.AddScoped<DbContext, Context>();
             //DI
 

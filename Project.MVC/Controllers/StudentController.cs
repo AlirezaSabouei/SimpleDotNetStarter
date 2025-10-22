@@ -1,19 +1,15 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Project.MVC.Models;
+using Project.Business.Services.Students;
 
 namespace Project.MVC.Controllers;
 
-public class HomeController(ILogger<HomeController> logger) : Controller
+public class StudentController(
+    StudentServices service,
+    ILogger<StudentController> logger) : Controller
 {
-    private readonly ILogger<HomeController> _logger = logger;
-
     public IActionResult Index()
-    {
-        return View();
-    }
-
-    public IActionResult Privacy()
     {
         return View();
     }
