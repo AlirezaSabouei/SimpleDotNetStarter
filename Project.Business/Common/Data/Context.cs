@@ -1,40 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using MediatR;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage;
 using Project.Domain;
 using Project.Domain.Entities;
 
 namespace Project.Business.Common.Data;
 
-public class Context(DbContextOptions<Context> options) : IdentityDbContext(options)
+public class Context(DbContextOptions<Context> options, IMediator mediator) : IdentityDbContext(options)
 {
     // Example table
     public DbSet<Student> Students { get; set; }
-
-    public async Task AddEntityAsync<TEntity>(TEntity entity) where TEntity : BaseEntity
-    {
-        await base.Set<TEntity>().AddAsync(entity);
-    }
     
-    public Task UpdateEntityAsync<TEntity>(TEntity entity) where TEntity : BaseEntity
-    {
-        Entry(entity).State = EntityState.Modified;
-        return Task.CompletedTask;
-    }
-    
-    public Task RemoveEntityAsync<TEntity>(TEntity entity) where TEntity : BaseEntity
-    {
-        base.Set<TEntity>().Remove(entity);
-        return Task.CompletedTask;
-    }
-    
-    public IQueryable<TEntity> QuerySet<TEntity>() where TEntity : BaseEntity
-    {
-        return base.Set<TEntity>();
-    }
-
-    public Task<int> SaveChangesAsync()
+    public async Task SaveChangesAsync()
     {
         var utcNow = DateTimeOffset.UtcNow;
 
@@ -53,7 +31,8 @@ public class Context(DbContextOptions<Context> options) : IdentityDbContext(opti
                 entry.Property(e => e.CreateDate).IsModified = false;
             }
         }
-        return base.SaveChangesAsync();
+        await base.SaveChangesAsync();
+        await _dispatchDomainEvents();
     }
 
     // protected override void OnModelCreating(ModelBuilder builder)
@@ -103,5 +82,21 @@ public class Context(DbContextOptions<Context> options) : IdentityDbContext(opti
     public Task RollBackTransaction()
     {
         return Database.RollbackTransactionAsync();
+    }
+    
+    private async Task _dispatchDomainEvents()
+    {
+        var domainEventEntities = ChangeTracker.Entries<BaseEntity>()
+            .Select(po => po.Entity)
+            .Where(po => po.DomainEvents.Any())
+            .ToArray();
+
+        foreach (var entity in domainEventEntities)
+        {
+            var events = entity.DomainEvents.ToArray();
+            entity.ClearDomainEvents();
+            foreach (var entityDomainEvent in events)
+                await mediator.Publish(entityDomainEvent);
+        }
     }
 }
